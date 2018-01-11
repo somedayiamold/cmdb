@@ -94,7 +94,7 @@ function gather_nic_info () {
 function gather_storage_info () {
     echo '    "storage": [' >> machine_info
     local counter=0
-    fdisk -l | grep -E "Diskk /dev/sd"\|"Disk /dev/vd" | awk '{print $2$3}' | while read line; do
+    for line in $(fdisk -l | grep -E "Diskk /dev/sd"\|"Disk /dev/vd" | awk '{print $2$3}'); do
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
         local volumn=$(echo ${line} | awk -F : '{printf("%d", (substr($2,1,index($2,".")-1)%10==0)?$2:$2+1)}')
         local rotational=$(cat /sys/block/${storage_label#/dev/}/queue/rotational)
@@ -123,7 +123,7 @@ function gather_storage_info () {
 function gather_memory_info () {
     echo '    "memory": [' >> machine_info
     local counter=0
-    dmidecode -t memory | grep -A5 "Memory Device" | grep Size | grep -v "No Module Installed" | awk -F : '{print $2}' | while read line; do
+    for line in $(dmidecode -t memory | grep -A5 "Memory Device" | grep Size | grep -v "No Module Installed" | awk -F : '{print $2}' | awk '{print $1$2}'); do
         if [ $(echo ${line} | grep -c GB) -gt 0 ]; then
             local size=${line%GB}
         else
