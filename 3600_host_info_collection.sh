@@ -151,7 +151,7 @@ function upload () {
     fi
     if [ ${updated} -eq 1 ]; then
         local ret_val=$(curl -s -m 180 -w %{http_code} -H "Content-Type: application/json" -X POST -d "$(cat machine_info)" "${UPLOAD_URL}" -o /dev/null)
-        echo "upload return code: ${ret_val}"
+        echo "upload return code: ${ret_val}" >> machine.log
         if [ ${ret_val} -eq 200 ]; then
             echo "upload successfully" >> machine.log
             falcon 0 "success"
