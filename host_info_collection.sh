@@ -66,6 +66,9 @@ function gather_nic_info () {
     for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*e | awk -F : '{print $1}' | sort); do
         local nic_name=$(lspci | grep "^$(ethtool -i ${nic} | awk -F":" '/bus-info/{print $(NF-1)":"$NF}')" | awk -F : '{print $NF}')
         echo "nic name: ${nic_name}"
+        if [ -z "${nic_name}" ]; then
+            continue
+        fi
         local ip=$(ifconfig ${nic} | grep inet | grep -v inet6 | awk '{print $2}')
         if [ -z "${ip}" ] && [ -n "${nic_list}" ]; then
             local ip=$(echo ${nic_list} | awk '{for(i=1;i<=NF;i++){if(index($i,"'${nic}'")>0){print substr($i,index($i,":")+1,length($i)-1)}}}')
