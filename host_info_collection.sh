@@ -94,7 +94,7 @@ function gather_nic_info () {
 function gather_storage_info () {
     echo '    "storage": [' >> machine_info
     local counter=0
-    for line in $(fdisk -l | grep -E "Diskk /dev/sd"\|"Disk /dev/vd" | awk '{print $2$3}'); do
+    for line in $(fdisk -l | grep -E "Disk /dev/sd"\|"Disk /dev/vd" | awk '{print $2$3}'); do
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
         local volumn=$(echo ${line} | awk -F : '{printf("%d", (substr($2,1,index($2,".")-1)%10==0)?$2:$2+1)}')
         local rotational=$(cat /sys/block/${storage_label#/dev/}/queue/rotational)
