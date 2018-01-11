@@ -139,7 +139,7 @@ function gather_memory_info () {
 
 function falcon () {
     ts=$(date +%s)
-    curl -X POST -d "[{\"metric\": \"CMDB\", \"endpoint\": \"$(hostname)\", \"timestamp\": ${ts},\"step\": 60,\"value\": 0,\"counterType\": \"GAUGE\",\"tags\": \"project=gaea,status=$1\"}]" http://127.0.0.1:1988/v1/push
+    curl -X POST -d "[{\"metric\": \"CMDB\", \"endpoint\": \"$(hostname)\", \"timestamp\": ${ts},\"step\": 60,\"value\": $1,\"counterType\": \"GAUGE\",\"tags\": \"project=gaea,status=$2\"}]" http://127.0.0.1:1988/v1/push
 }
 
 function upload () {
@@ -153,15 +153,15 @@ function upload () {
         echo "upload return code: ${ret_val}"
         if [ ${ret_val} -eq 200 ]; then
             echo "upload successfully"
-            falcon "success"
+            falcon 0 "success"
         else
             echo "upload failed"
-            falcon "failed"
+            falcon 1 "failed"
             return 1
         fi
     else
         echo "no update found"
-        falcon "uptodate"
+        falcon 0 "uptodate"
     fi
 }
 
