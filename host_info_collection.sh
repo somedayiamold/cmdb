@@ -57,13 +57,13 @@ function gather_nic_info () {
     echo '    "nic": [' >> machine_info
     local counter=0
     local nic_list=""
-    for nic in $(cat /proc/net/dev | grep ^team | awk -F : '{print $1}' | sort); do
+    for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*team | awk -F : '{print $1}' | sort); do
         local ip=$(ifconfig ${nic} | grep inet | grep -v inet6 | awk '{print $2}')
         for i in $(nmcli con show | grep "${nic}-port1" | awk '{print $NF}' | sort); do
             nic_list="${nic_list} ${i}:${ip}"
         done
     done
-    for nic in $(cat /proc/net/dev | grep -Ev ^veth\|^docker\|^flannel\|^team\|Inter\|face\|lo | awk -F : '{print $1}' | sort); do
+    for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*e | awk -F : '{print $1}' | sort); do
         local nic_name=$(lspci | grep "^$(ethtool -i ${nic} | awk -F":" '/bus-info/{print $(NF-1)":"$NF}')" | awk -F : '{print $NF}')
         echo "nic name: ${nic_name}"
         local ip=$(ifconfig ${nic} | grep inet | grep -v inet6 | awk '{print $2}')
