@@ -1,6 +1,7 @@
 #!/bin/bash
-set -e
 set -o pipefail
+export LANG="en_US.UTF-8"
+export PATH=$PATH:/usr/sbin/
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
 readonly UPLOAD_URL="http://192.168.21.142:8000/inventory/uploadMachineInfo"
