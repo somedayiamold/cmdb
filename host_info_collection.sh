@@ -42,11 +42,11 @@ function gather_os_info () {
     echo "product_name: ${product_name}"
     local os_name=$(cat /etc/redhat-release)
     echo "os_name: ${os_name}"
-    local kernal=$(uname -r)
-    echo "kernal: ${kernal}"
+    local kernel=$(uname -r)
+    echo "kernel: ${kernel}"
     echo '    "product_name":' '"'${product_name}'",' >> machine_info
     echo '    "os":' '"'${os_name}'",' >> machine_info
-    echo '    "kernal":' '"'${kernal}'",' >> machine_info
+    echo '    "kernel":' '"'${kernel}'",' >> machine_info
 }
 
 function gather_nic_info () {
