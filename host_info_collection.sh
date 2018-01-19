@@ -38,6 +38,10 @@ function gather_cpu_info () {
 }
 
 function gather_os_info () {
+    type dmidecode &> /dev/null
+    if [ $? -ne 0 ]; then
+        yum install -y dmidecode
+    fi
     local product_name=$(dmidecode -s system-product-name)
     echo "product_name: ${product_name}"
     local os_name=$(cat /etc/redhat-release)
