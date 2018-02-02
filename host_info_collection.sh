@@ -70,7 +70,7 @@ function gather_nic_info () {
         #    local ethernet=$(nmcli con show | grep "${nic}-port1" | awk '{print $NF}')
         #    nic_list="${nic_list} ${i}:${ip}"
         #else
-        local ethernet=$(teamdctl ${nic} state view | grep -B1 'link watches' | grep -v 'link watches' | head -1 | awk '{print $1}')
+        local ethernet=$(teamdctl ${nic} state view | grep --no-group-separator -B1 'link watches' | grep -v 'link watches' | sort | head -1 | awk '{print $1}')
         nic_list="${nic_list} ${ethernet}:${ip}"
         #fi
     done
@@ -88,7 +88,7 @@ function gather_nic_info () {
         echo "ip: ${ip}"
         local capability=$(ethtool ${nic} | grep -B1 "Supported pause frame use" | grep -v "Supported pause frame use" | awk '{print substr($NF,1,index($NF,"baseT/Full")-1)}')
         if [ -z "${capability}" ]; then
-            capability=0
+            capability=100
         fi
         echo "capability: ${capability} Mb/s"
         if [ ${counter} -gt 0 ]; then
