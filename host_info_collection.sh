@@ -61,18 +61,18 @@ function gather_nic_info () {
     echo '    "nic": [' >> machine_info
     local counter=0
     local nic_list=""
-    #nmcli con show &> /dev/null
-    #local nmcli_available=$?
+    nmcli con show &> /dev/null
+    local nmcli_available=$?
     for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*team | awk -F : '{print $1}' | sort); do
         #local ip=$(ifconfig ${nic} | grep inet | grep -v inet6 | awk '{print $2}')
         local ip=$(ip addr show ${nic} | grep inet | grep -v inet6 | awk '{print substr($2,1,index($2,"/")-1)}')
-        #if [ ${nmcli_available} -eq 0 ]; then
-        #    local ethernet=$(nmcli con show | grep "${nic}-port1" | awk '{print $NF}')
-        #    nic_list="${nic_list} ${i}:${ip}"
-        #else
-        local ethernet=$(teamdctl ${nic} state view | grep --no-group-separator -B1 'link watches' | grep -v 'link watches' | sort | head -1 | awk '{print $1}')
-        nic_list="${nic_list} ${ethernet}:${ip}"
-        #fi
+        if [ ${nmcli_available} -eq 0 ]; then
+            local ethernet=$(nmcli con show | grep "${nic}-port1" | awk '{print $NF}')
+            nic_list="${nic_list} ${i}:${ip}"
+        else
+            local ethernet=$(teamdctl ${nic} state view | grep --no-group-separator -B1 'link watches' | grep -v 'link watches' | sort | head -1 | awk '{print $1}')
+            nic_list="${nic_list} ${ethernet}:${ip}"
+        fi
     done
     for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*e | awk -F : '{print $1}' | sort); do
         local nic_name=$(lspci | grep "^$(ethtool -i ${nic} | awk -F":" '/bus-info/{print $(NF-1)":"$NF}')" | awk -F : '{print $NF}')
@@ -80,7 +80,7 @@ function gather_nic_info () {
         if [ -z "${nic_name}" ]; then
             continue
         fi
-        local ip=$(ip addr show ${nic} | grep inet | grep -v inet6 | awk '{if(index($2,"addr:")>0){print substr($2,6,index($2,"/")-6)}else{print substr($2,1,index($2,"/")-1)}}')
+        local ip=$(ip addr show ${nic} | grep brd | grep inet | grep -v inet6 | awk '{if(index($2,"addr:")>0){print substr($2,6,index($2,"/")-6)}else{print substr($2,1,index($2,"/")-1)}}')
         #local ip=$(ifconfig ${nic} | grep inet | grep -v inet6 | awk '{if(index($2,"addr:")){print substr($2,index($2,"addr:")+5)}else{print $2}}')
         if [ -z "${ip}" ] && [ -n "${nic_list}" ]; then
             local ip=$(echo ${nic_list} | awk '{for(i=1;i<=NF;i++){if(index($i,"'${nic}'")>0){print substr($i,index($i,":")+1,length($i)-1)}}}')
