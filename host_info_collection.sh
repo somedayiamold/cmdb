@@ -68,11 +68,10 @@ function gather_nic_info () {
         local ip=$(ip addr show ${nic} | grep inet | grep -v inet6 | awk '{print substr($2,1,index($2,"/")-1)}')
         if [ ${nmcli_available} -eq 0 ]; then
             local ethernet=$(nmcli con show | grep "${nic}-port1" | awk '{print $NF}')
-            nic_list="${nic_list} ${i}:${ip}"
         else
             local ethernet=$(teamdctl ${nic} state view | grep --no-group-separator -B1 'link watches' | grep -v 'link watches' | sort | head -1 | awk '{print $1}')
-            nic_list="${nic_list} ${ethernet}:${ip}"
         fi
+        nic_list="${nic_list} ${ethernet}:${ip}"
     done
     for nic in $(cat /proc/net/dev | grep -E ^\(\\s\)*e | awk -F : '{print $1}' | sort); do
         local nic_name=$(lspci | grep "^$(ethtool -i ${nic} | awk -F":" '/bus-info/{print $(NF-1)":"$NF}')" | awk -F : '{print $NF}')
