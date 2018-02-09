@@ -88,13 +88,13 @@ function gather_nic_info () {
 function gather_ip_info () {
     echo '    "ip": [' >> machine_info
     local counter=0
-    for ip_address in $(ip -f inet addr | grep inet | grep -Ev '127.0.0.1'\|'flannel' | awk '{if(index($2,"addr:")>0){print substr($2,6,index($2,"/")-6)}else{print substr($2,1,index($2,"/")-1)}}'); do
+    for ip_address in $(ip -f inet addr | grep inet | grep -Ev '127.0.0.1'\|'flannel'\|'docker' | awk '{if(index($2,"addr:")>0){print substr($2,6,index($2,"/")-6)}else{print substr($2,1,index($2,"/")-1)}}'); do
         echo "ip address: ${ip_address}"
         if [ ${counter} -gt 0 ]; then
             echo '        },' >> machine_info
         fi
         echo '        {' >> machine_info
-        echo '            "address":' '"'${ip_address}'",' >> machine_info
+        echo '            "address":' '"'${ip_address}'"' >> machine_info
         counter=$((counter+1))
     done
     if [ ${counter} -gt 0 ]; then
@@ -191,6 +191,7 @@ function main() {
     gather_cpu_info
     gather_os_info
     gather_nic_info
+    gather_ip_info
     gather_storage_info
     gather_memory_info
     echo '}' >> machine_info
