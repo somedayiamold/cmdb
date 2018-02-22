@@ -3,8 +3,8 @@ export LANG="en_US.UTF-8"
 export PATH=$PATH:/usr/sbin/
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
-readonly UPLOAD_URL="http://192.168.21.142:8000/inventory/uploadMachineInfo/"
-#readonly UPLOAD_URL="http://172.16.32.109:8500/inventory/uploadMachineInfo/"
+readonly UPLOAD_URL="http://192.168.21.142:8000/api/machine/"
+#readonly UPLOAD_URL="http://172.16.32.109:8500/api/machine/"
 function gather_cpu_info () {
     local physical_cpu_count=$(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)
     echo "physical_cpu_count: ${physical_cpu_count}"
@@ -163,7 +163,7 @@ function upload () {
         updated=$?
     fi
     if [ ${updated} -eq 1 ]; then
-        local ret_val=$(curl -s -m 180 -w %{http_code} -H "Content-Type: application/json" -X POST -d "$(cat machine_info)" "${UPLOAD_URL}" -o /dev/null)
+        local ret_val=$(curl -s -m 180 -w %{http_code} -H "Content-Type: application/json" -H "Authorization: Token 61c8af7afd24853995cf679f5f84258d87204aa1" -X POST -d "$(cat machine_info)" "${UPLOAD_URL}" -o /dev/null)
         echo "upload return code: ${ret_val}"
         if [ ${ret_val} -eq 200 ]; then
             echo "upload successfully"
