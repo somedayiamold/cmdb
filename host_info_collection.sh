@@ -41,13 +41,22 @@ function gather_os_info () {
     if [ $? -ne 0 ]; then
         yum install -y dmidecode
     fi
+    local manufacturer=$(dmidecode -s system-manufacturer)
+    echo "manufacturer: ${manufacturer}"
     local product_name=$(dmidecode -s system-product-name)
     echo "product_name: ${product_name}"
+    local serial=$(dmidecode -s system-serial-number)
+    echo "system serial number: ${serial}"
+    local uuid=$(dmidecode -s system-uuid)
+    echo "system uuid: ${uuid}"
     local os_name=$(cat /etc/redhat-release)
     echo "os_name: ${os_name}"
     local kernel=$(uname -r)
     echo "kernel: ${kernel}"
+    echo '    "manufacturer":' '"'${manufacturer}'",' >> machine_info
     echo '    "product_name":' '"'${product_name}'",' >> machine_info
+    echo '    "serial":' '"'${serial}'",' >> machine_info
+    echo '    "uuid":' '"'${uuid}'",' >> machine_info
     echo '    "os":' '"'${os_name}'",' >> machine_info
     echo '    "kernel":' '"'${kernel}'",' >> machine_info
 }
