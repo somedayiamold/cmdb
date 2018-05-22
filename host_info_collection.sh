@@ -185,17 +185,17 @@ function upload () {
 }
 
 function main() {
-    local old_hostname=$(hostname)
+    #local old_hostname=$(hostname)
     if [ -f machine_info ]; then
-        old_hostname=$(sed -n '/"hostname/p' machine_info | awk '{print substr($2,2,index($2,",")-3)}')
+        #old_hostname=$(sed -n '/"hostname/p' machine_info | awk '{print substr($2,2,index($2,",")-3)}')
         mv machine_info machine_info.bak
     fi
     echo '{' > machine_info
     echo hostname: $(hostname)
     echo '    "hostname":' '"'$(hostname)'",' >> machine_info
-    if [ $(hostname) != "${old_hostname}" ]; then
-        echo '    "old_hostname":' '"'${old_hostname}'",' >> machine_info
-    fi
+    #if [ $(hostname) != "${old_hostname}" ]; then
+    #    echo '    "old_hostname":' '"'${old_hostname}'",' >> machine_info
+    #fi
     gather_cpu_info
     gather_os_info
     gather_nic_info
