@@ -26,27 +26,27 @@ function disk_check() {
             local slot_num=$(echo ${line} | awk '{print $NF}')
         elif [ $(echo ${line} | grep -c "Media Error Count") -gt 0 ]; then
             local meida_error_count=$(echo ${line} | awk -F : '{print $NF}')
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Media_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${meida_error_count}', "counterType": "GAUGE", "tags": "PD='${enclosure_id}:${slot_num}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Media_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${meida_error_count}', "counterType": "GAUGE", "tags": "name=storage,PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${metric_data} 
         elif [ $(echo ${line} | grep -c "Other Error Count") -gt 0 ]; then
             local other_error_count=$(echo ${line} | awk -F : '{print $NF}')
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Other_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${other_error_count}', "counterType": "GAUGE", "tags": "PD='${enclosure_id}:${slot_num}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Other_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${other_error_count}', "counterType": "GAUGE", "tags": "name=storage,PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         elif [ $(echo ${line} | grep -c "Predictive Failure Count") -gt 0 ]; then
             local predictive_failure_count=$(echo ${line} | awk -F : '{print $NF}')
-            local metric_data=${metric_data}' {"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Predictive_Failure_Count", "timestamp": '${timestamp}', "step": 60, "value": '${predictive_failure_count}', "counterType": "GAUGE", "tags": "PD='${enclosure_id}:${slot_num}'"},'
+            local metric_data=${metric_data}' {"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Predictive_Failure_Count", "timestamp": '${timestamp}', "step": 60, "value": '${predictive_failure_count}', "counterType": "GAUGE", "tags": "name=storage,PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         elif [ $(echo ${line} | grep -c "Firmware state") -gt 0 ]; then
             local firmware_state=$(echo ${line} | grep -vc "Online")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Firmware_state", "timestamp": '${timestamp}', "step": 60, "value": '${firmware_state}', "counterType": "GAUGE", "tags": "PD='${enclosure_id}:${slot_num}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Firmware_state", "timestamp": '${timestamp}', "step": 60, "value": '${firmware_state}', "counterType": "GAUGE", "tags": "name=storage,PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         elif [ $(echo ${line} | grep -c "Drive Temperature") -gt 0 ]; then
             local drive_temperature=$(echo ${line} | awk -F : '{print $NF}' | awk '{print substr($1,1,length($1)-1)}')
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Drive_Temperature", "timestamp": '${timestamp}', "step": 60, "value": '${drive_temperature}', "counterType": "GAUGE", "tags": "PD='${enclosure_id}:${slot_num}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Drive_Temperature", "timestamp": '${timestamp}', "step": 60, "value": '${drive_temperature}', "counterType": "GAUGE", "tags": "name=storage,PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         else
@@ -60,12 +60,12 @@ function disk_check() {
             local virtual_drive_id=$(echo ${line} | awk '{print $3}')
         elif [ $(echo ${line} | grep -c "State") -gt 0 ]; then
             local state=$(echo ${line} | grep -vc "Optimal")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.state", "timestamp": '${timestamp}', "step": 60, "value": '${state}', "counterType": "GAUGE", "tags": "VD='${virtual_drive_id}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.state", "timestamp": '${timestamp}', "step": 60, "value": '${state}', "counterType": "GAUGE", "tags": "name=storage,VD='${virtual_drive_id}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         elif [ $(echo ${line} | grep -c "Disk Cache Policy") -gt 0 ]; then
             local cache_policy=$(echo ${line} | grep -vc "Disk's Default")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.cache_policy", "timestamp": '${timestamp}', "step": 60, "value": '${cache_policy}', "counterType": "GAUGE", "tags": "VD='${virtual_drive_id}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.cache_policy", "timestamp": '${timestamp}', "step": 60, "value": '${cache_policy}', "counterType": "GAUGE", "tags": "name=storage,VD='${virtual_drive_id}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
         else
