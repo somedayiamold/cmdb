@@ -112,7 +112,9 @@ function sensor_check() {
             local sensor=$(echo ${line} | awk -F \| '{print $1}' | awk 'sub(/[ \t\r\n]+$/, "", $0)' | tr ' ''/' '_')
             local temp=$(echo ${line} | awk -F \| '{print $2}' | awk '{print $1}')
             local status=$(echo ${line} | awk '{print $NF}')
-            echo '{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
             temp_sensor_status=$(get_value "${status}")
             if [ ${temp_sensor_status} -ne 0 ]; then
                 local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}'"},'
