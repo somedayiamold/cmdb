@@ -63,8 +63,8 @@ function disk_check() {
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.state", "timestamp": '${timestamp}', "step": 60, "value": '${state}', "counterType": "GAUGE", "tags": "name=storage,VD='${virtual_drive_id}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
-        elif [ $(echo ${line} | grep -c "Disk Cache Policy") -gt 0 ]; then
-            local cache_policy=$(echo ${line} | grep -vc "Disk's Default")
+        elif [ $(echo ${line} | grep -c "Current Cache Policy") -gt 0 ]; then
+            local cache_policy=$(echo ${line} | grep -vc "WriteThrough, ReadAheadNone, Direct, No Write Cache if Bad BBU")
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.vd.cache_policy", "timestamp": '${timestamp}', "step": 60, "value": '${cache_policy}', "counterType": "GAUGE", "tags": "name=storage,VD='${virtual_drive_id}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data} 
