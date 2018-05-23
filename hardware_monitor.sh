@@ -74,7 +74,7 @@ function disk_check() {
     /opt/MegaRAID/MegaCli/MegaCli64 -PDList -aALL > megacli_pd_info
     while read line; do
         #echo ${line}
-        if [ $(echo ${line} | grep -c "Adapter:") -gt 0 ]; then
+        if [ $(echo ${line} | grep -c "Adapter") -gt 0 ]; then
             local adapter=$(echo ${line} | grep Adapter | awk '{print substr($2,index($2,"#")+1)}')
         elif [ $(echo ${line} | grep -c "Enclosure Device ID") -gt 0 ]; then
             local enclosure_id=$(echo ${line} | awk '{print $NF}')
@@ -96,11 +96,16 @@ function disk_check() {
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Firmware state") -gt 0 ]; then
-            local firmware_state=$(echo ${line} | grep -vc "Online")
+            local firmware_state=$(echo ${line} | grep -vc "Online"\|"JBOD")
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Firmware_State", "timestamp": '${timestamp}', "step": 60, "value": '${firmware_state}', "counterType": "GAUGE", "tags": "name=raid,adapter='${adapter}',PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
+        elif [ $(echo ${line} | grep -c "Media Type") -gt 0 ]; then
+            local media_type=$(echo ${line} | awk -F : '{print $2}')
         elif [ $(echo ${line} | grep -c "Drive Temperature") -gt 0 ]; then
+            if [ "${media_type}" = " Solid State Device" ]; then
+                continue
+            fi
             local drive_temperature=$(echo ${line} | awk -F : '{print $NF}' | awk '{print substr($1,1,length($1)-1)}')
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Drive_Temperature", "timestamp": '${timestamp}', "step": 60, "value": '${drive_temperature}', "counterType": "GAUGE", "tags": "name=raid,adapter='${adapter}',PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
@@ -112,7 +117,7 @@ function disk_check() {
     /opt/MegaRAID/MegaCli/MegaCli64 -LDInfo -Lall -aALL > megacli_ld_info
     while read line; do
         #echo ${line}
-        if [ $(echo ${line} | grep -c "Adapter:") -gt 0 ]; then
+        if [ $(echo ${line} | grep -c "Adapter") -gt 0 ]; then
             local adapter=$(echo ${line} | grep Adapter | awk '{print $2}')
         elif [ $(echo ${line} | grep -c "Virtual Drive") -gt 0 ]; then
             local virtual_drive_id=$(echo ${line} | awk '{print $3}')
