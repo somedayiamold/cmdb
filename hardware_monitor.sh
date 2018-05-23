@@ -123,7 +123,7 @@ function sensor_check() {
             post_data=${post_data}' '${metric_data}
         else
             local other_sensor_status=$(get_value "${status}")
-            if [ ${other_sensor} -ne 0 ]; then
+            if [ ${other_sensor_status} -ne 0 ]; then
                 local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${other_sensor_status}', "counterType": "GAUGE", "tags": "sensor=other_sensor,name='${sensor}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data} 
