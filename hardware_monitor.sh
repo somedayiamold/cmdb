@@ -84,7 +84,7 @@ function disk_check() {
             local meida_error_count=$(echo ${line} | awk -F : '{print $NF}')
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Media_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${meida_error_count}', "counterType": "GAUGE", "tags": "name=raid,adapter='${adapter}',PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
-            post_data=${metric_data}
+            post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Other Error Count") -gt 0 ]; then
             local other_error_count=$(echo ${line} | awk -F : '{print $NF}')
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Other_Error_Count", "timestamp": '${timestamp}', "step": 60, "value": '${other_error_count}', "counterType": "GAUGE", "tags": "name=raid,adapter='${adapter}',PD='${enclosure_id}:${slot_num}'"},'
