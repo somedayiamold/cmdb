@@ -118,7 +118,7 @@ function sensor_check() {
             fi
         elif [ $(echo ${line} | grep -Ec "Mem"\|"DIMM") -gt 0 ]; then
             local memory_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}'"}'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         else
@@ -130,6 +130,7 @@ function sensor_check() {
             fi
         fi
     done < ipmitool_sensor_info
+    post_data=${post_data%,}
 }
 
 function main() {
