@@ -167,37 +167,40 @@ function sensor_check() {
         local status=$(echo ${line} | awk '{print $NF}')
         if [ $(echo ${line} | grep -c "Fan") -gt 0 ]; then
             local fan_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${fan_status}', "counterType": "GAUGE", "tags": "sensor=Fan,name='${sensor}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${fan_status}', "counterType": "GAUGE", "tags": "sensor=Fan,name='${sensor}',status='${status}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -Ec "CPU"\|"P* Status") -gt 0 ]; then
             local cpu_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${cpu_status}', "counterType": "GAUGE", "tags": "sensor=CPU,name='${sensor}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${cpu_status}', "counterType": "GAUGE", "tags": "sensor=CPU,name='${sensor}',status='${status}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Temp") -gt 0 ]; then
             local temp=$(echo ${line} | awk -F \| '{print $2}' | awk '{print $1}')
-            if [ $(echo ${temp} | grep -Ec ^[0-9]+$) -eq 0 ]; then
-                local temp=0
+            if [ $(echo ${temp} | grep -Ec ^[0-9]+$) -gt 0 ]; then
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
+                 echo ${metric_data}
+                post_data=${post_data}' '${metric_data}
+            else
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.Value_Error", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',value='${temp}'"},'
+                echo ${metric_data}
+                post_data=${post_data}' '${metric_data}
             fi
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
-            echo ${metric_data}
-            post_data=${post_data}' '${metric_data}
             local temp_sensor_status=$(get_value "${status}")
             if [ ${temp_sensor_status} -ne 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',status='${status}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             fi
         elif [ $(echo ${line} | grep -Ec "Mem"\|"DIMM") -gt 0 ]; then
             local memory_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}',status='${status}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         else
             local other_sensor_status=$(get_value "${status}")
             if [ ${other_sensor_status} -ne 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${other_sensor_status}', "counterType": "GAUGE", "tags": "sensor=other_sensor,name='${sensor}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${other_sensor_status}', "counterType": "GAUGE", "tags": "sensor=other_sensor,name='${sensor}',status='${status}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             fi
