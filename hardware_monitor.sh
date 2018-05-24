@@ -177,6 +177,9 @@ function sensor_check() {
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Temp") -gt 0 ]; then
             local temp=$(echo ${line} | awk -F \| '{print $2}' | awk '{print $1}')
+            if [ $(echo ${temp} | grep -Ec ^[0-9]+$) -eq 0 ]; then
+                local temp=0
+            fi
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
