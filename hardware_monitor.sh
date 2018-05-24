@@ -27,6 +27,9 @@ function disk_check() {
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
         local device=${storage_label#/dev/}
         local smart_data=$(smartctl -H ${storage_label} | grep -A1 "START OF READ SMART DATA SECTION" | tail -1)
+        if [ -z "${smart_data}" ]; then
+            continue
+        fi
         local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk '{print $1}')
         local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
         local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}',status='${health}'"},'
