@@ -170,7 +170,7 @@ function sensor_check() {
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${fan_status}', "counterType": "GAUGE", "tags": "sensor=Fan,name='${sensor}',status='${status}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
-        elif [ $(echo ${line} | grep -Ec "CPU"\|"P* Status") -gt 0 ]; then
+        elif [ $(echo ${line} | grep -Ec "CPU"\|"P[0-9]+ Status") -gt 0 ]; then
             local cpu_status=$(get_value "${status}")
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${cpu_status}', "counterType": "GAUGE", "tags": "sensor=CPU,name='${sensor}',status='${status}'"},'
             echo ${metric_data}
