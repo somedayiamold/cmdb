@@ -30,7 +30,7 @@ function disk_check() {
         if [ -z "${smart_data}" ]; then
             continue
         fi
-        local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk 'sub(/^[ \t\r\n]+/, "", $0)' | tr ' ' '_')
+        local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk 'sub(/^[ \t\r\n]+/, "", $0)' | tr ' ''['',''='']' '_')
         local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
         local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}',status='${health}'"},'
         echo ${metric_data}
