@@ -1,4 +1,5 @@
 #!/bin/bash
+export LANG="en_US.UTF-8"
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
 hostname=$(hostname)
@@ -22,7 +23,7 @@ function disk_check() {
     if [ $? -ne 0 ]; then
         yum install -y smartmontools
     fi
-    for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2$3}'); do
+    for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2}'); do
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
         local device=${storage_label#/dev/}
         local smart_data=$(smartctl -H ${storage_label} | grep -A1 "START OF READ SMART DATA SECTION" | tail -1)
