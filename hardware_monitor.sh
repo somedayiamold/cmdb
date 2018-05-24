@@ -17,6 +17,23 @@ function push_to_falcon() {
 }
 
 function disk_check() {
+    # check disk by smartmontools
+    type smartctl &> /dev/null
+    if [ $? -ne 0 ]; then
+        yum install -y smartmontools
+    fi
+    for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2$3}'); do
+        local storage_label=$(echo ${line} | awk -F : '{print $1}')
+        local device=${storage_label#/dev/}
+        local smart_data=$(smartctl -H ${storage_label} | grep -A1 "START OF READ SMART DATA SECTION" | tail -1)
+        local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk '{print $1}')
+        local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}',status='${health}'"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+    done
+
+    # check disk by megacli
     /opt/MegaRAID/MegaCli/MegaCli64 -AdpBbuCmd -GetBbuStatus -aAll > megacli_bbu_info
     local ret_code=$?
     while read line && [ ${ret_code} -eq 0 ]; do
