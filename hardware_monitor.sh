@@ -203,6 +203,9 @@ function sensor_check() {
                  echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             else
+                if [ $(echo ${temp} | grep -c "disabled") -gt 0 ]; then
+                    continue
+                fi
                 local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.Value_Error", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',value='${temp}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
