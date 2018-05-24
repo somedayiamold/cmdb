@@ -26,7 +26,7 @@ function disk_check() {
     for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2}'); do
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
         local device=${storage_label#/dev/}
-        local smart_data=$(smartctl -H ${storage_label} | grep -A1 "START OF READ SMART DATA SECTION" | tail -1)
+        local smart_data=$(smartctl -H ${storage_label} | grep -E "SMART Health Status"\|"SMART overall-health self-assessment test result")
         if [ -z "${smart_data}" ]; then
             continue
         fi
