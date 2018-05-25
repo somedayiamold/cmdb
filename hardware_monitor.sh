@@ -220,7 +220,7 @@ function sensor_check() {
         post_data=${post_data}' '${metric_data}
     fi
     # chekc if ipmi service started
-    ipmitool sdr | sort > ipmitool_sensor_info
+    ipmitool sdr > ipmitool_sensor_info
     local ret_code=$?
     if [ ${ret_code} -ne 0 ]; then
         /etc/init.d/ipmi start
@@ -231,7 +231,7 @@ function sensor_check() {
             post_data=${post_data}' '${metric_data}
             return ${ret_code}
         else
-            ipmitool sdr | sort > ipmitool_sensor_info
+            ipmitool sdr > ipmitool_sensor_info
         fi
     else
         local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmi_running"},'
