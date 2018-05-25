@@ -22,21 +22,41 @@ function disk_check() {
     type smartctl &> /dev/null
     if [ $? -ne 0 ]; then
         yum install -y smartmontools
-    fi
-    for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2}'); do
-        local storage_label=$(echo ${line} | awk -F : '{print $1}')
-        local device=${storage_label#/dev/}
-        local smart_data=$(smartctl -H ${storage_label} | grep -E "SMART Health Status"\|"SMART overall-health self-assessment test result")
-        if [ -z "${smart_data}" ]; then
-            continue
+        if [ $? -ne 0 ]; then
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=smartmontools_installation"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
         fi
-        local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk 'sub(/^[ \t\r\n]+/, "", $0)' | tr ' ''['',''='']' '_')
-        local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
-        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}',status='${health}'"},'
+    else
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=smartmontools_installation"},'
         echo ${metric_data}
         post_data=${post_data}' '${metric_data}
-    done
+        for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2}'); do
+            local storage_label=$(echo ${line} | awk -F : '{print $1}')
+            local device=${storage_label#/dev/}
+            local smart_data=$(smartctl -H ${storage_label} | grep -E "SMART Health Status"\|"SMART overall-health self-assessment test result")
+            if [ -z "${smart_data}" ]; then
+                continue
+            fi
+            local health=$(echo ${smart_data} | awk -F : '{print $2}' | awk 'sub(/^[ \t\r\n]+/, "", $0)' | tr ' ''['',''='']' '_')
+            local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}'"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
+        done
+    fi
 
+    # check if megacli installed
+    if [ -f /opt/MegaRAID/MegaCli/MegaCli64 ]; then
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.megacli", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=megacli_installed"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+    else
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.megacli", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=megacli_installed"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+        return 1
+    fi
     # check disk by megacli
     /opt/MegaRAID/MegaCli/MegaCli64 -AdpBbuCmd -GetBbuStatus -aAll > megacli_bbu_info
     local ret_code=$?
@@ -92,6 +112,7 @@ function disk_check() {
             continue
         fi
     done < megacli_bbu_info
+
     /opt/MegaRAID/MegaCli/MegaCli64 -PDList -aALL > megacli_pd_info
     while read line; do
         #echo ${line}
@@ -135,6 +156,7 @@ function disk_check() {
             continue
         fi
     done < megacli_pd_info
+
     /opt/MegaRAID/MegaCli/MegaCli64 -LDInfo -Lall -aALL > megacli_ld_info
     while read line; do
         #echo ${line}
@@ -182,49 +204,90 @@ function get_value() {
 
 # get sensor state by ipmitool
 function sensor_check() {
-    ipmitool sdr > ipmitool_sensor_info
+    # chekc if ipmitool installed
+    type ipmitool &> /dev/null
+    if [ $? -ne 0 ]; then
+        yum install -y OpenIPMI ipmitool
+        if [ $? -ne 0 ]; then
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmitool_installation"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
+            return 1
+        fi
+    else
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmitool_installation"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+    fi
+    # chekc if ipmi service started
+    ipmitool sdr | sort > ipmitool_sensor_info
+    local ret_code=$?
+    if [ ${ret_code} -ne 0 ]; then
+        /etc/init.d/ipmi start
+        local ret_code=$?
+        if [ ${ret_code} -ne 0 ]; then
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmitool_running"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
+            return ${ret_code}
+        else
+            ipmitool sdr | sort > ipmitool_sensor_info
+        fi
+    else
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmitool_running"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+    fi
+
+    ipmitool -v sdr | grep -E "Sensor ID"\|"Entity ID" > ipmitool_sensor_entity_info
+
+    local line_num=0
     while read line; do
+        line_num=$((line_num+1))
         local sensor=$(echo ${line} | awk -F \| '{print $1}' | awk 'sub(/[ \t\r\n]+$/, "", $0)' | tr ' ''/' '_')
         local status=$(echo ${line} | awk '{print $NF}')
+        local entity_line_num=$((line_num*2))
+        local entity_id=$(sed -n "${entity_line_num}p" ipmitool_sensor_entity_info | awk '{print $4}')
+        local entity_name=$(sed -n "${entity_line_num}p" ipmitool_sensor_entity_info | awk -F: '{print substr($2, index($2, "(")+1, index($2, ")")-index($2, "(")-1)}' | tr ' ' '_')
         if [ $(echo ${line} | grep -c "Fan") -gt 0 ]; then
             local fan_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${fan_status}', "counterType": "GAUGE", "tags": "sensor=Fan,name='${sensor}',status='${status}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${fan_status}', "counterType": "GAUGE", "tags": "sensor=Fan,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -Ec "CPU"\|"P[0-9]+ Status") -gt 0 ]; then
             local cpu_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${cpu_status}', "counterType": "GAUGE", "tags": "sensor=CPU,name='${sensor}',status='${status}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${cpu_status}', "counterType": "GAUGE", "tags": "sensor=CPU,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Temp") -gt 0 ]; then
             local temp=$(echo ${line} | awk -F \| '{print $2}' | awk '{print $1}')
             if [ $(echo ${temp} | grep -Ec ^[0-9]+$) -gt 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.temp", "timestamp": '${timestamp}', "step": 60, "value": '${temp}', "counterType": "GAUGE", "tags": "name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
                  echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             else
                 if [ $(echo ${temp} | grep -c "disabled") -gt 0 ]; then
                     continue
                 fi
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.Value_Error", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',value='${temp}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.Value_Error", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',id='${entity_id}',entity='${entity_name}',value='${temp}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             fi
             local temp_sensor_status=$(get_value "${status}")
             if [ ${temp_sensor_status} -ne 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',status='${status}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=temp_sensor,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             fi
         elif [ $(echo ${line} | grep -Ec "Mem"\|"DIMM") -gt 0 ]; then
             local memory_status=$(get_value "${status}")
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}',status='${status}'"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         else
             local other_sensor_status=$(get_value "${status}")
             if [ ${other_sensor_status} -ne 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${other_sensor_status}', "counterType": "GAUGE", "tags": "sensor=other_sensor,name='${sensor}',status='${status}'"},'
+                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${other_sensor_status}', "counterType": "GAUGE", "tags": "sensor=other_sensor,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
                 echo ${metric_data}
                 post_data=${post_data}' '${metric_data}
             fi
