@@ -40,6 +40,10 @@ function gather_os_info () {
     type dmidecode &> /dev/null
     if [ $? -ne 0 ]; then
         yum install -y dmidecode
+        if [ $? -ne 0 ]; then
+            echo "install dmidecode failed"
+            return 1
+        fi
     fi
     local manufacturer=$(dmidecode -s system-manufacturer)
     echo "manufacturer: ${manufacturer}"
@@ -65,6 +69,10 @@ function gather_nic_info () {
     type lspci &> /dev/null
     if [ $? -ne 0 ]; then
         yum install -y pciutils
+        if [ $? -ne 0 ]; then
+            echo "install pciutils failed"
+            return 1
+        fi
     fi
     echo '    "nic": [' >> machine_info
     local counter=0
@@ -198,7 +206,15 @@ function main() {
     #fi
     gather_cpu_info
     gather_os_info
+    local ret_val=$?
+    if [ ${ret_val} -ne 0 ]; then
+        return ${ret_val}
+    fi
     gather_nic_info
+    local ret_val=$?
+    if [ ${ret_val} -ne 0 ]; then
+        return ${ret_val}
+    fi
     gather_ip_info
     gather_storage_info
     gather_memory_info
