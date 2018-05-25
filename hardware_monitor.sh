@@ -23,12 +23,12 @@ function disk_check() {
     if [ $? -ne 0 ]; then
         yum install -y smartmontools
         if [ $? -ne 0 ]; then
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=smartmontools_installation"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=smartmontools_installed"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         fi
     else
-        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=smartmontools_installation"},'
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smartmontools", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=smartmontools_installed"},'
         echo ${metric_data}
         post_data=${post_data}' '${metric_data}
         for line in $(fdisk -l | grep -E "Disk /dev/sd" | awk '{print $2}'); do
@@ -209,13 +209,13 @@ function sensor_check() {
     if [ $? -ne 0 ]; then
         yum install -y OpenIPMI ipmitool
         if [ $? -ne 0 ]; then
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmitool_installation"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmitool_installed"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
             return 1
         fi
     else
-        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmitool_installation"},'
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmitool_installed"},'
         echo ${metric_data}
         post_data=${post_data}' '${metric_data}
     fi
@@ -226,7 +226,7 @@ function sensor_check() {
         /etc/init.d/ipmi start
         local ret_code=$?
         if [ ${ret_code} -ne 0 ]; then
-            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmitool_running"},'
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.status", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=ipmi_running"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
             return ${ret_code}
@@ -234,7 +234,7 @@ function sensor_check() {
             ipmitool sdr | sort > ipmitool_sensor_info
         fi
     else
-        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmitool.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmitool_running"},'
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.status", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=ipmi_running"},'
         echo ${metric_data}
         post_data=${post_data}' '${metric_data}
     fi
