@@ -277,11 +277,9 @@ function sensor_check() {
                 post_data=${post_data}' '${metric_data}
             fi
             local temp_sensor_status=$(get_value "${status}")
-            if [ ${temp_sensor_status} -ne 0 ]; then
-                local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=Temp,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
-                echo ${metric_data}
-                post_data=${post_data}' '${metric_data}
-            fi
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${temp_sensor_status}', "counterType": "GAUGE", "tags": "sensor=Temp,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -Ec "Mem"\|"DIMM") -gt 0 ]; then
             local memory_status=$(get_value "${status}")
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.ipmi.sensor.status", "timestamp": '${timestamp}', "step": 60, "value": '${memory_status}', "counterType": "GAUGE", "tags": "sensor=Mem,name='${sensor}',id='${entity_id}',entity='${entity_name}'"},'
