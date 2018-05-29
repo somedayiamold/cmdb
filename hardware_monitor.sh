@@ -138,7 +138,17 @@ function disk_check() {
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
         elif [ $(echo ${line} | grep -c "Firmware state") -gt 0 ]; then
-            local firmware_state=$(echo ${line} | grep -Evc "Online"\|"JBOD")
+            if [ $(echo ${line} | grep -Ec "Online"\|"JBOD") -gt 0 ]; then
+                local firmware_state=0
+            elif [ $(echo ${line} | grep -Eic "Unconfigured\(bad\)"\|"Failed") -gt 0 ]; then
+                local firmware_state=1
+            elif [ $(echo ${line} | grep -c "Unconfigured(good)") -gt 0 ]; then
+                local firmware_state=2
+            elif [ $(echo ${line} | grep -c "Rebuilding") -gt 0 ]; then
+                local firmware_state=3
+            else
+                local firmware_state=4
+            fi
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.lsiraid.pd.Firmware_State", "timestamp": '${timestamp}', "step": 60, "value": '${firmware_state}', "counterType": "GAUGE", "tags": "name=raid,adapter='${adapter}',PD='${enclosure_id}:${slot_num}'"},'
             echo ${metric_data}
             post_data=${post_data}' '${metric_data}
