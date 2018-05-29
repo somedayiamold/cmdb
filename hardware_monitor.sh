@@ -307,12 +307,12 @@ function sensor_check() {
             fi
         fi
     done < ipmitool_sensor_info
-    post_data=${post_data%,}
 }
 
 function main() {
     disk_check
     sensor_check
+    post_data=${post_data%,}
     post_data='['${post_data}']'
     echo ${post_data}
     push_to_falcon "${post_data}"
