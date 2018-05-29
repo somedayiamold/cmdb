@@ -38,6 +38,9 @@ function disk_check() {
             if [ -z "${smart_data}" ]; then
                 continue
             fi
+            local temperature_metric=$(smartctl -A ${storage_label} | grep -E "Airflow_Temperature_Cel"\|"Temperature_Celsius" | awk '{print "{\"endpoint\": \""'${hostname}'"\", \"metric\": \"sys.disk.smart.temp\", \"timestamp\": "'${timestamp}'", \"step\": 60, \"value\": "$10", \"counterType\": \"GAUGE\", \"tags\": \"name=smart,device="'${device}'",temp="$2"\"},"}' | awk '{printf("%s", $0)}')
+            echo ${temperature_metric}
+            post_data=${post_data}' '${temperature_metric}
             local health=$(echo ${smart_data} | awk -F : '{print $2}')
             local disk_status=$(echo ${smart_data} | grep -Evc "OK"\|"PASSED")
             local metric_data='{"endpoint": "'${hostname}'", "metric": "sys.disk.smart.health", "timestamp": '${timestamp}', "step": 60, "value": '${disk_status}', "counterType": "GAUGE", "tags": "name=smart,device='${device}'"},'
