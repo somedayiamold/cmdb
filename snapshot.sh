@@ -187,6 +187,9 @@ function purge() {
 function main() {
     schedule
     purge
+    post_data=${post_data%,}
+    post_data='['${post_data}']'
+    echo ${post_data}
     push_to_falcon "${post_data}"
     return $?
 }
