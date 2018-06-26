@@ -109,7 +109,7 @@ function dump_top() {
         return 1
     else
         touch top.lock
-        top -b -n 1 >> top.$(date '+%Y%m%d')
+        top -b -n 5 >> top.$(date '+%Y%m%d')
         rm -f top.lock
     fi
 }
@@ -126,7 +126,7 @@ function dump_io_top() {
         return 1
     else
         touch iotop.lock
-        iotop -b -t -k -n 1 >> iotop.$(date '+%Y%m%d')
+        iotop -b -t -k -n 5 >> iotop.$(date '+%Y%m%d')
         rm -f iotop.lock
     fi
 }
