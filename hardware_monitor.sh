@@ -311,6 +311,7 @@ function sensor_check() {
 }
 
 function main() {
+    >MegaSAS.log
     disk_check
     sensor_check
     post_data=${post_data%,}
