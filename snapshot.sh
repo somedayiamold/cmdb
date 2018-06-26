@@ -62,7 +62,7 @@ function check_io_await() {
             echo "read_bytes: ${read_bytes}"
             echo "write_bytes: ${write_bytes}"
             echo "io.await: ${io_await}"
-            if [ $(awk 'BEGIN{count=0}{if ($0 > 30000000) count+=1}END{print count}' write_bytes_history) -eq 3 ] || [ $(awk 'BEGIN{count=0}{if ($0 > 200) count+=1}END{print count}' io_await_history) -eq 3 ]; then
+            if [ $(awk 'BEGIN{count=0}{if ($0 > 1800000000) count+=1}END{print count}' write_bytes_history) -eq 3 ] || [ $(awk 'BEGIN{count=0}{if ($0 > 200) count+=1}END{print count}' io_await_history) -eq 3 ]; then
                 dump_io_top
             fi
         done
@@ -115,6 +115,37 @@ function dump_top() {
 }
 
 function dump_io_top() {
+    echo "dump io top"
+    local counter=0
+    while [ -f iotop.lock ] && [ ${counter} -lt 5 ]; do
+        counter=$((counter+1))
+        sleep 1
+    done
+    if [ -f iotop.lock ]; then
+        echo "unable to get iotop.lock"
+        return 1
+    else
+        touch iotop.lock
+        iotop -b -t -k -n 1 >> iotop.$(date '+%Y%m%d')
+        rm -f iotop.lock
+    fi
+}
+
+
+function schedule() {
+    type bc &> /dev/null
+    if [ $? -ne 0 ]; then
+        yum install -y bc
+        if [ $? -ne 0 ]; then
+            local metric_data='{"endpoint": "'${hostname}'", "metric": "load.snapshot", "timestamp": '${timestamp}', "step": 60, "value": 1, "counterType": "GAUGE", "tags": "name=bc_installed"},'
+            echo ${metric_data}
+            post_data=${post_data}' '${metric_data}
+        fi
+    else
+        local metric_data='{"endpoint": "'${hostname}'", "metric": "load.snapshot", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=bc_installed"},'
+        echo ${metric_data}
+        post_data=${post_data}' '${metric_data}
+    fi
     type iotop &> /dev/null
     if [ $? -ne 0 ]; then
         yum install -y iotop
@@ -127,29 +158,11 @@ function dump_io_top() {
         local metric_data='{"endpoint": "'${hostname}'", "metric": "load.snapshot", "timestamp": '${timestamp}', "step": 60, "value": 0, "counterType": "GAUGE", "tags": "name=iotop_installed"},'
         echo ${metric_data}
         post_data=${post_data}' '${metric_data}
-        echo "dump io top"
-        local counter=0
-        while [ -f iotop.lock ] && [ ${counter} -lt 5 ]; do
-            counter=$((counter+1))
-            sleep 1
-        done
-        if [ -f iotop.lock ]; then
-            echo "unable to get iotop.lock"
-            return 1
-        else
-            touch iotop.lock
-            iotop -b -t -k -n 1 >> iotop.$(date '+%Y%m%d')
-            rm -f iotop.lock
-        fi
+        check_io_await &
+        check_cpu_idle &
+        check_load_avg &
+        wait
     fi
-}
-
-
-function schedule() {
-    check_io_await &
-    check_cpu_idle &
-    check_load_avg &
-    wait
 }
 
 function push_to_falcon() {
