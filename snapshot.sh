@@ -56,13 +56,13 @@ function check_io_await() {
             if [ ${n_io} -ne 0 ]; then
                 io_await=$(echo "scale=2;${use}/${n_io}" | bc)
             fi
-            write_history read_bytes_history ${read_bytes}
-            write_history write_bytes_history ${write_bytes}
-            write_history io_await_history ${io_await}
+            write_history ${dev}_read_bytes_history ${read_bytes}
+            write_history ${dev}_write_bytes_history ${write_bytes}
+            write_history ${dev}_io_await_history ${io_await}
             echo "read_bytes: ${read_bytes}"
             echo "write_bytes: ${write_bytes}"
             echo "io.await: ${io_await}"
-            if [ $(awk 'BEGIN{count=0}{if ($0 > 1800000000) count+=1}END{print count}' write_bytes_history) -eq 3 ] || [ $(awk 'BEGIN{count=0}{if ($0 > 200) count+=1}END{print count}' io_await_history) -eq 3 ]; then
+            if [ $(awk 'BEGIN{count=0}{if ($0 > 1800000000) count+=1}END{print count}' ${dev}_write_bytes_history) -eq 3 ] || [ $(awk 'BEGIN{count=0}{if ($0 > 200) count+=1}END{print count}' ${dev}_io_await_history) -eq 3 ]; then
                 dump_io_top
             fi
         done
@@ -126,7 +126,7 @@ function dump_io_top() {
         return 1
     else
         touch iotop.lock
-        iotop -b -t -k -n 5 >> iotop.$(date '+%Y%m%d')
+        iotop -b -t -k -o -P -n 5 >> iotop.$(date '+%Y%m%d')
         rm -f iotop.lock
     fi
 }
