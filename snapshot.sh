@@ -2,15 +2,19 @@
 export LANG="en_US.UTF-8"
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
+# thresholds
 readonly COUNTER=5
-readonly IO_AWAIT_THRESHOLD=220
+readonly READ_BYTES_THRESHOLD=6000000000
 readonly WRITE_BYTES_THRESHOLD=1800000000
-readonly READ_BYTES_THRESHOLD=2000000000
+readonly IO_AWAIT_THRESHOLD=220
 readonly LOAD_AVG_THRESHOLD=16
 readonly CPU_IDLE_THRESHOLD=0.2
+# variables for pushing to falcon
 hostname=$(hostname)
 timestamp=$(date +%s)
 post_data=""
+
+# handling after terminated
 trap   'cleanup'  1 2 3 15
 
 function cleanup() {
@@ -18,6 +22,7 @@ function cleanup() {
     jobs -p | xargs kill -9
     exit
 }
+
 function write_history() {
     local history_file=${1}
     local value=${2}
@@ -68,7 +73,7 @@ function check_io_await() {
             echo "read_bytes: ${read_bytes}"
             echo "write_bytes: ${write_bytes}"
             echo "io.await: ${io_await}"
-            if [ $(awk 'BEGIN{count=0}{if ($0 > '${WRITE_BYTES_THRESHOLD}') count+=1}END{print count}' ${dev}_write_bytes_history) -eq ${COUNTER} ] || [ $(awk 'BEGIN{count=0}{if ($0 > '${IO_AWAIT_THRESHOLD}') count+=1}END{print count}' ${dev}_io_await_history) -eq ${COUNTER} ]; then
+            if [ $(awk 'BEGIN{count=0}{if ($0 > '${READ_BYTES_THRESHOLD}') count+=1}END{print count}' ${dev}_read_bytes_history) -eq ${COUNTER} ] || [ $(awk 'BEGIN{count=0}{if ($0 > '${WRITE_BYTES_THRESHOLD}') count+=1}END{print count}' ${dev}_write_bytes_history) -eq ${COUNTER} ] || [ $(awk 'BEGIN{count=0}{if ($0 > '${IO_AWAIT_THRESHOLD}') count+=1}END{print count}' ${dev}_io_await_history) -eq ${COUNTER} ]; then
                 dump_io_top
             fi
         done
