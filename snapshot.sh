@@ -2,6 +2,12 @@
 export LANG="en_US.UTF-8"
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
+readonly COUNTER=5
+readonly IO_AWAIT_THRESHOLD=220
+readonly WRITE_BYTES_THRESHOLD=1800000000
+readonly READ_BYTES_THRESHOLD=2000000000
+readonly LOAD_AVG_THRESHOLD=16
+readonly CPU_IDLE_THRESHOLD=0.2
 hostname=$(hostname)
 timestamp=$(date +%s)
 post_data=""
@@ -19,7 +25,7 @@ function write_history() {
     if [ ! -f ${history_file} ]; then
         >${history_file}
     else
-        latest="$(tail -2 ${history_file}) ${value}"
+        latest="$(tail -$((COUNTER-1)) ${history_file}) ${value}"
         >${history_file}
     fi
     for value in ${latest}; do
@@ -62,7 +68,7 @@ function check_io_await() {
             echo "read_bytes: ${read_bytes}"
             echo "write_bytes: ${write_bytes}"
             echo "io.await: ${io_await}"
-            if [ $(awk 'BEGIN{count=0}{if ($0 > 1800000000) count+=1}END{print count}' ${dev}_write_bytes_history) -eq 3 ] || [ $(awk 'BEGIN{count=0}{if ($0 > 200) count+=1}END{print count}' ${dev}_io_await_history) -eq 3 ]; then
+            if [ $(awk 'BEGIN{count=0}{if ($0 > "'${WRITE_BYTES_THRESHOLD}'") count+=1}END{print count}' ${dev}_write_bytes_history) -eq ${COUNTER} ] || [ $(awk 'BEGIN{count=0}{if ($0 > "'${IO_AWAIT_THRESHOLD}'") count+=1}END{print count}' ${dev}_io_await_history) -eq ${COUNTER} ]; then
                 dump_io_top
             fi
         done
@@ -82,7 +88,7 @@ function check_cpu_idle() {
         local cpu_idle=$(echo "scale=2;(${idle_new}-${idle_old})/(${total_new}-${total_old})" | bc)
         write_history cpu_idle_history ${cpu_idle}
         echo "cpu idle: ${cpu_idle}"
-        if [ $(awk 'BEGIN{count=0}{if ($0 < 0.2) count+=1}END{print count}' cpu_idle_history) -eq 3 ]; then
+        if [ $(awk 'BEGIN{count=0}{if ($0 < "'${CPU_IDLE_THRESHOLD}'") count+=1}END{print count}' cpu_idle_history) -eq ${COUNTER} ]; then
             dump_top
         fi
     fi
@@ -92,7 +98,7 @@ function check_load_avg() {
     local load_avg=$(cat /proc/loadavg  | awk '{print $1}')
     write_history load_avg_history ${load_avg}
     echo "load_avg: ${load_avg}"
-    if [ $(awk 'BEGIN{count=0}{if ($0 >= 16) count+=1}END{print count}' load_avg_history) -eq 3 ]; then
+    if [ $(awk 'BEGIN{count=0}{if ($0 >= "'${LOAD_AVG_THRESHOLD}'") count+=1}END{print count}' load_avg_history) -eq ${COUNTER} ]; then
         dump_top
     fi
 }
