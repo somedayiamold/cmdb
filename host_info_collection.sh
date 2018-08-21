@@ -124,7 +124,7 @@ function gather_storage_info () {
     local counter=0
     for line in $(fdisk -l | grep -E "Disk /dev/sd"\|"Disk /dev/vd" | awk '{print $2$3}'); do
         local storage_label=$(echo ${line} | awk -F : '{print $1}')
-        local volumn=$(echo ${line} | awk -F : '{printf("%d", (substr($2,1,index($2,".")-1)%10==0)?$2:$2+1)}')
+        local volume=$(echo ${line} | awk -F : '{printf("%d", (substr($2,1,index($2,".")-1)%10==0)?$2:$2+1)}')
         local rotational=$(cat /sys/block/${storage_label#/dev/}/queue/rotational)
         if [ ${rotational} -eq 0 ]; then
             local media="SDD"
@@ -132,13 +132,13 @@ function gather_storage_info () {
             local media="HDD"
         fi
         echo "storage_label: ${storage_label}"
-        echo "volumn: ${volumn} GB"
+        echo "volume: ${volume} GB"
         echo "media: ${media}"
         if [ ${counter} -gt 0 ]; then
             echo '        },' >> machine_info
         fi
         echo '        {' >> machine_info
-        echo '            "volumn":' ${volumn}',' >> machine_info
+        echo '            "volume":' ${volume}',' >> machine_info
         echo '            "media":' ${rotational} >> machine_info
         counter=$((counter+1))
     done
