@@ -3,7 +3,9 @@ export LANG="en_US.UTF-8"
 export PATH=$PATH:/usr/sbin/
 current_dir=$(dirname $0)
 cd ${current_dir} || exit 1
+
 readonly UPLOAD_URL="http://192.168.21.142:8000/api/machine/"
+
 function gather_cpu_info () {
     local physical_cpu_count=$(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)
     echo "physical_cpu_count: ${physical_cpu_count}"
