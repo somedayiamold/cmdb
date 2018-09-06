@@ -55,8 +55,11 @@ function gather_os_info () {
     echo "system serial number: ${serial}"
     local uuid=$(dmidecode -s system-uuid)
     echo "system uuid: ${uuid}"
-    local os_name=$(cat /etc/redhat-release)
-    echo "os_name: ${os_name}"
+    if [ -f /etc/redhat-release ]; then
+        local os_name=$(cat /etc/redhat-release)
+    else
+        local os_name=$(grep PRETTY_NAME /etc/os-release | awk -F = '{print substr($2,2,length($2)-2)}')
+    fi
     local kernel=$(uname -r)
     echo "kernel: ${kernel}"
     echo '    "manufacturer":' '"'${manufacturer}'",' >> machine_info
@@ -84,7 +87,11 @@ function gather_nic_info () {
         if [ -z "${nic_name}" ]; then
             continue
         fi
-        local capability=$(ethtool ${nic} | grep -B1 "Supported pause frame use" | grep -v "Supported pause frame use" | awk '{print substr($NF,1,index($NF,"baseT/Full")-1)}')
+        if [ $(ethtool ${nic} | grep -c "Supported link modes:   Not reported") -gt 0 ]; then
+            local capability=$(ethtool ${nic} | grep -B1 "Advertised pause frame use" | grep -v "Advertised pause frame use" | awk '{print substr($NF,1,index($NF,"baseT/Full")-1)}')
+        else
+            local capability=$(ethtool ${nic} | grep -B1 "Supported pause frame use" | grep -v "Supported pause frame use" | awk '{print substr($NF,1,index($NF,"baseT/Full")-1)}')
+        fi
         if [ -z "${capability}" ]; then
             capability=100
         fi
